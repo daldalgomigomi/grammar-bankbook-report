@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>문법 문제뱅크 판매 보고서</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #f4f6f9; color: #222; }
+  header { background: #E3001B; color: #fff; padding: 20px 32px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  header span { font-size: 13px; opacity: 0.85; margin-left: auto; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+  .section { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .section-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+  .chart-wrap { position: relative; height: 260px; }
+  .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  .error { text-align: center; padding: 40px; color: #E3001B; font-size: 14px; }
+
+  /* 테이블 */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: #f7f7f7; }
+  th { padding: 10px 12px; text-align: center; font-weight: 600; color: #555; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
+  td { padding: 9px 12px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #333; }
+  tbody tr:hover { background: #fafafa; }
+  td.date { text-align: left; font-weight: 500; }
+  .total-row td { font-weight: 700; background: #fff8f8; color: #E3001B; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-2w { background: #e8f4ff; color: #1a6fc4; }
+  .badge-4w { background: #fff0e0; color: #c47a1a; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 문법 문제뱅크 판매 보고서</h1>
+  <span id="updated-at"></span>
+</header>
+
+<div class="container">
+  <div id="loading" class="loading">데이터 불러오는 중...</div>
+  <div id="main" style="display:none">
+
+    <!-- 1. 월별 총매출 -->
+    <div class="section">
+      <div class="section-title">💰 월별 총매출 (유료상품 결제금액 합계)</div>
+      <div class="chart-wrap"><canvas id="chartRevenue"></canvas></div>
+    </div>
+
+    <!-- 2. 월별 총 무료체험 수 -->
+    <div class="section">
+      <div class="section-title">🎁 월별 총 무료체험 신청 수</div>
+      <div class="chart-wrap"><canvas id="chartMonthlyFree"></canvas></div>
+    </div>
+
+    <!-- 3. 6월 일자별 무료체험 -->
+    <div class="section">
+      <div class="section-title">📅 6월 일자별 무료체험 신청 수</div>
+      <div class="chart-wrap"><canvas id="chartDailyFree"></canvas></div>
+    </div>
+
+    <!-- 4. 일자별 데이터 표 -->
+    <div class="section">
+      <div class="section-title">📋 일자별 상세 데이터</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th><span class="badge badge-2w">2주 무료</span></th>
+              <th><span class="badge badge-4w">4주 무료</span></th>
+              <th>1개월</th>
+              <th>3개월</th>
+              <th>6개월</th>
+              <th>12개월</th>
+              <th>유료 합계</th>
+              <th>매출(원)</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const URLS = {
+  w2: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfGDC6c6b9czCNyTwYKGKrKhyhCVo5DXaNvVieb9TTfWzyMymuq--QhiUgwpTYtMY03TpbTmaGeTf1/pub?gid=0&single=true&output=csv',
+  w4: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfGDC6c6b9czCNyTwYKGKrKhyhCVo5DXaNvVieb9TTfWzyMymuq--QhiUgwpTYtMY03TpbTmaGeTf1/pub?gid=1465275243&single=true&output=csv',
+  paid: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfGDC6c6b9czCNyTwYKGKrKhyhCVo5DXaNvVieb9TTfWzyMymuq--QhiUgwpTYtMY03TpbTmaGeTf1/pub?gid=1049889585&single=true&output=csv'
+};
+
+const MONTHS = ['6월','7월','8월','9월','10월','11월','12월'];
+const MONTH_NUMS = [6,7,8,9,10,11,12];
+const PRODUCTS = ['1개월','3개월','6개월','12개월'];
+
+function parseDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  // YYYY-MM-DD
+  let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  // YYYY. M. D. (한국식 — 후행 점 포함)
+  m = str.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  // M/D/YYYY
+  m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[1]-1, +m[2]);
+  return null;
+}
+
+function fmt(n) { return n ? n.toLocaleString('ko-KR') : '0'; }
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function fetchCSV(url) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(url, {
+      download: true, header: true, skipEmptyLines: true,
+      complete: r => resolve(r.data),
+      error: e => reject(e)
+    });
+  });
+}
+
+async function main() {
+  try {
+    const [raw2, raw4, rawPaid] = await Promise.all([
+      fetchCSV(URLS.w2), fetchCSV(URLS.w4), fetchCSV(URLS.paid)
+    ]);
+
+    // 날짜 컬럼 키 찾기 (첫 번째 컬럼)
+    const getDateKey = (row) => Object.keys(row)[0];
+
+    // ── 2주/4주: 날짜별 카운트
+    const count2w = {}, count4w = {};
+    raw2.forEach(r => {
+      const d = parseDate(r[getDateKey(r)]);
+      if (!d) return;
+      const k = fmtDate(d);
+      count2w[k] = (count2w[k] || 0) + 1;
+    });
+    raw4.forEach(r => {
+      const d = parseDate(r[getDateKey(r)]);
+      if (!d) return;
+      const k = fmtDate(d);
+      count4w[k] = (count4w[k] || 0) + 1;
+    });
+
+    // ── 유료: 날짜 + 상품별 카운트 & 금액
+    const paidCount = {}, paidRevenue = {};
+    rawPaid.forEach(r => {
+      const keys = Object.keys(r);
+      const d = parseDate(r[keys[0]]);
+      if (!d) return;
+      const k = fmtDate(d);
+      // 주문상품 컬럼 찾기
+      const prodKey = keys.find(k => k.includes('주문상품') || k.includes('상품'));
+      const amtKey = keys.find(k => k.includes('결제금액') || k.includes('금액'));
+      const prod = prodKey ? (r[prodKey] || '').trim() : '';
+      const amt = amtKey ? parseInt((r[amtKey] || '0').replace(/[^0-9]/g, '')) || 0 : 0;
+      if (!paidCount[k]) paidCount[k] = {};
+      if (!paidRevenue[k]) paidRevenue[k] = 0;
+      PRODUCTS.forEach(p => { if (!paidCount[k][p]) paidCount[k][p] = 0; });
+      if (PRODUCTS.includes(prod)) paidCount[k][prod]++;
+      paidRevenue[k] += amt;
+    });
+
+    // ── 전체 날짜 집합 (6월)
+    const allDates = new Set([
+      ...Object.keys(count2w), ...Object.keys(count4w), ...Object.keys(paidCount)
+    ]);
+    const juneDates = [...allDates].filter(d => d.startsWith('2024-06') || d.startsWith('2025-06')).sort();
+
+    // 실제 연도 감지
+    const sampleDate = [...allDates][0] || '2025-06-01';
+    const year = sampleDate.split('-')[0];
+
+    // ── 월별 집계
+    function monthKey(dateStr, mo) {
+      return dateStr.startsWith(`${year}-${String(mo).padStart(2,'0')}`);
+    }
+    const monthRevenue = MONTH_NUMS.map(mo =>
+      Object.entries(paidRevenue).filter(([d]) => monthKey(d, mo)).reduce((s,[,v]) => s+v, 0)
+    );
+    const monthFree = MONTH_NUMS.map(mo => {
+      const w2 = Object.entries(count2w).filter(([d]) => monthKey(d, mo)).reduce((s,[,v]) => s+v, 0);
+      const w4 = Object.entries(count4w).filter(([d]) => monthKey(d, mo)).reduce((s,[,v]) => s+v, 0);
+      return w2 + w4;
+    });
+
+    // ── 6월 일자별 무료체험
+    const dailyDates = juneDates;
+    const daily2w = dailyDates.map(d => count2w[d] || 0);
+    const daily4w = dailyDates.map(d => count4w[d] || 0);
+    const dailyLabels = dailyDates.map(d => d.slice(5)); // MM-DD
+
+    // ── 업데이트 시각
+    document.getElementById('updated-at').textContent = `업데이트: ${new Date().toLocaleDateString('ko-KR')}`;
+
+    // ── 차트 공통 옵션
+    const baseOpts = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 12 }, boxWidth: 14 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true, ticks: { font: { size: 11 } } }
+      }
+    };
+
+    // 1. 월별 매출 차트
+    new Chart(document.getElementById('chartRevenue'), {
+      type: 'bar',
+      data: {
+        labels: MONTHS,
+        datasets: [{
+          label: '매출(원)',
+          data: monthRevenue,
+          backgroundColor: monthRevenue.map((v,i) => i===0 ? '#E3001B' : '#f5c6cb'),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        ...baseOpts,
+        plugins: {
+          ...baseOpts.plugins,
+          tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}원` } }
+        }
+      }
+    });
+
+    // 2. 월별 무료체험 차트
+    new Chart(document.getElementById('chartMonthlyFree'), {
+      type: 'bar',
+      data: {
+        labels: MONTHS,
+        datasets: [{
+          label: '무료체험 신청 수',
+          data: monthFree,
+          backgroundColor: monthFree.map((v,i) => i===0 ? '#1a6fc4' : '#c5dff8'),
+          borderRadius: 6
+        }]
+      },
+      options: baseOpts
+    });
+
+    // 3. 6월 일자별 무료체험
+    new Chart(document.getElementById('chartDailyFree'), {
+      type: 'bar',
+      data: {
+        labels: dailyLabels,
+        datasets: [
+          { label: '2주 무료체험', data: daily2w, backgroundColor: '#1a6fc4', borderRadius: 4 },
+          { label: '4주 무료체험', data: daily4w, backgroundColor: '#f5a623', borderRadius: 4 }
+        ]
+      },
+      options: { ...baseOpts, scales: { ...baseOpts.scales, x: { ...baseOpts.scales.x, stacked: false } } }
+    });
+
+    // 4. 일자별 표
+    const tbody = document.getElementById('tableBody');
+    let tot2w=0, tot4w=0, totP={}, totRev=0;
+    PRODUCTS.forEach(p => totP[p]=0);
+
+    juneDates.forEach(d => {
+      const p = paidCount[d] || {};
+      const rev = paidRevenue[d] || 0;
+      const w2 = count2w[d] || 0;
+      const w4 = count4w[d] || 0;
+      const paidTotal = PRODUCTS.reduce((s,pr) => s + (p[pr]||0), 0);
+      tot2w+=w2; tot4w+=w4; totRev+=rev;
+      PRODUCTS.forEach(pr => totP[pr]+=(p[pr]||0));
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="date">${d.slice(5)}</td>
+        <td>${w2||'-'}</td><td>${w4||'-'}</td>
+        ${PRODUCTS.map(pr => `<td>${p[pr]||'-'}</td>`).join('')}
+        <td><b>${paidTotal||'-'}</b></td>
+        <td>${rev ? fmt(rev)+'원' : '-'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // 합계 행
+    const totPaidAll = PRODUCTS.reduce((s,p) => s+totP[p], 0);
+    const totRow = document.createElement('tr');
+    totRow.className = 'total-row';
+    totRow.innerHTML = `
+      <td class="date">합계</td>
+      <td>${tot2w}</td><td>${tot4w}</td>
+      ${PRODUCTS.map(p => `<td>${totP[p]}</td>`).join('')}
+      <td>${totPaidAll}</td>
+      <td>${fmt(totRev)}원</td>
+    `;
+    tbody.appendChild(totRow);
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('loading').innerHTML = `<div class="error">데이터 로드 실패: ${e.message}<br><small>구글 시트 게시 설정을 확인해주세요.</small></div>`;
+    console.error(e);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
