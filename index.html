@@ -9,58 +9,30 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #eaf0f8; color: #1a2456; }
-
   header {
     background: linear-gradient(135deg, #1a2456 0%, #2b3f8c 100%);
-    color: #fff;
-    padding: 0 32px;
-    display: flex;
-    align-items: stretch;
-    min-height: 64px;
+    color: #fff; padding: 0 32px;
+    display: flex; align-items: stretch; min-height: 64px;
   }
-  .header-inner {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 14px;
-  }
-  .header-badge {
-    background: #f5c200;
-    color: #1a2456;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 3px 9px;
-    border-radius: 20px;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-  }
+  .header-inner { display: flex; align-items: center; width: 100%; gap: 14px; }
+  .header-badge { background: #f5c200; color: #1a2456; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.3px; white-space: nowrap; }
   header h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
   header .updated { font-size: 12px; opacity: 0.65; margin-left: auto; }
-
   .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-
-  .section {
-    background: #fff;
-    border-radius: 14px;
-    padding: 24px 24px 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(26,36,86,0.07);
-    border-top: 3px solid #1a2456;
-  }
-  .section-title {
-    font-size: 14px;
-    font-weight: 800;
-    color: #1a2456;
-    margin-bottom: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eaf0f8;
-    letter-spacing: -0.2px;
-  }
+  .section { background: #fff; border-radius: 14px; padding: 24px 24px 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(26,36,86,0.07); border-top: 3px solid #1a2456; }
+  .section-title { font-size: 14px; font-weight: 800; color: #1a2456; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #eaf0f8; letter-spacing: -0.2px; }
   .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap-sm { position: relative; height: 300px; }
   .loading { text-align: center; padding: 80px; color: #8899bb; font-size: 14px; }
 
-  /* 표 */
-  .table-scroll { overflow-x: auto; }
+  /* 섹션1 레이아웃: 도넛 + 바 나란히 */
+  .sec1-grid { display: flex; gap: 24px; align-items: center; }
+  .sec1-donut { flex: 0 0 280px; height: 280px; position: relative; }
+  .sec1-bar { flex: 1; height: 260px; position: relative; }
+  .legend-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #333; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead tr { background: #1a2456; }
   th { padding: 10px 12px; text-align: center; font-weight: 700; color: #fff; white-space: nowrap; font-size: 12px; }
@@ -70,9 +42,10 @@
   td.date { text-align: left; font-weight: 600; color: #1a2456; }
   td.date.sat { color: #1a6fc4; }
   td.date.sun { color: #e3001b; }
-  .total-row td { font-weight: 800; background: #fffbe6; color: #1a2456; border-top: 2px solid #f5c200; }
   td.free-total { background: #e8edf8; font-weight: 700; color: #1a2456; }
   td.paid-total { background: #fff8d6; font-weight: 700; color: #7a5c00; }
+  .total-row td { font-weight: 800; background: #fffbe6; color: #1a2456; border-top: 2px solid #f5c200; }
+  .zero { color: #ccc; }
 </style>
 </head>
 <body>
@@ -89,24 +62,39 @@
   <div id="loading" class="loading">데이터 불러오는 중...</div>
   <div id="main" style="display:none">
 
+    <!-- 1. 누적 유료상품별 판매비중 -->
     <div class="section">
-      <div class="section-title">1. 월별 유료상품 매출</div>
+      <div class="section-title">1. 누적 유료상품별 판매비중</div>
+      <div class="sec1-grid">
+        <div>
+          <div class="sec1-donut"><canvas id="chartDonut"></canvas></div>
+        </div>
+        <div class="sec1-bar"><canvas id="chartPaidBar"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 2. 월별 유료상품 매출 -->
+    <div class="section">
+      <div class="section-title">2. 월별 유료상품 매출</div>
       <div class="chart-wrap"><canvas id="chartRevenue"></canvas></div>
     </div>
 
+    <!-- 3. 월별 무료체험 신청수 -->
     <div class="section">
-      <div class="section-title">2. 월별 무료체험 상품 신청수 (2주 / 4주)</div>
+      <div class="section-title">3. 월별 무료체험 상품 신청수 (2주 / 4주)</div>
       <div class="chart-wrap"><canvas id="chartMonthlyFree"></canvas></div>
     </div>
 
+    <!-- 4. 일별 무료체험 신청수 -->
     <div class="section">
-      <div class="section-title">3. 일별 무료체험 신청수</div>
+      <div class="section-title">4. 일별 무료체험 신청수</div>
       <div class="chart-wrap"><canvas id="chartDailyFree"></canvas></div>
     </div>
 
+    <!-- 5. 일별 상세 데이터 -->
     <div class="section">
-      <div class="section-title">4. 일별 상세 데이터</div>
-      <div class="table-scroll">
+      <div class="section-title">5. 일별 상세 데이터</div>
+      <div style="overflow-x:auto">
         <table>
           <thead>
             <tr>
@@ -137,14 +125,20 @@ const URLS = {
   paid: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfGDC6c6b9czCNyTwYKGKrKhyhCVo5DXaNvVieb9TTfWzyMymuq--QhiUgwpTYtMY03TpbTmaGeTf1/pub?gid=1049889585&single=true&output=csv'
 };
 
-const MONTHS = ['6월','7월','8월','9월','10월','11월','12월'];
+const MONTHS   = ['6월','7월','8월','9월','10월','11월','12월'];
 const MONTH_NUMS = [6,7,8,9,10,11,12];
 const PRODUCTS = ['1개월','3개월','6개월','12개월'];
 const NAVY       = '#1a2456';
 const NAVY_LIGHT = '#c8d4ee';
 const YELLOW     = '#f5c200';
-const YELLOW_LIGHT = '#ffe88a';
-const BLUE_MID   = '#2b3f8c';
+
+// 상품별 컬러
+const PROD_COLORS = {
+  '1개월':  '#1a2456',
+  '3개월':  '#2b3f8c',
+  '6개월':  '#f5c200',
+  '12개월': '#c8d4ee',
+};
 
 function parseDate(str) {
   if (!str) return null;
@@ -207,6 +201,14 @@ async function main() {
     const year = allKeys.length ? allKeys[0].split('-')[0] : '2026';
     const isMonth = (ds, mo) => ds.startsWith(`${year}-${String(mo).padStart(2,'0')}`);
 
+    // 누적 유료 상품별 합계
+    const totalProd = {};
+    PRODUCTS.forEach(p => totalProd[p] = 0);
+    Object.values(paidCount).forEach(obj => {
+      PRODUCTS.forEach(p => totalProd[p] += (obj[p]||0));
+    });
+    const totalPaidAll = PRODUCTS.reduce((s,p) => s+totalProd[p], 0);
+
     const monthRev = MONTH_NUMS.map(mo => Object.entries(paidRevenue).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
     const month2w  = MONTH_NUMS.map(mo => Object.entries(count2w).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
     const month4w  = MONTH_NUMS.map(mo => Object.entries(count4w).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
@@ -231,7 +233,99 @@ async function main() {
       }
     };
 
-    // 1. 월별 매출
+    // 1-A. 도넛 차트
+    new Chart(document.getElementById('chartDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: PRODUCTS,
+        datasets: [{
+          data: PRODUCTS.map(p => totalProd[p]),
+          backgroundColor: PRODUCTS.map(p => PROD_COLORS[p]),
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const val = ctx.raw;
+                const pct = totalPaidAll ? ((val/totalPaidAll)*100).toFixed(1) : 0;
+                return ` ${ctx.label}: ${val}개 (${pct}%)`;
+              }
+            }
+          }
+        }
+      },
+      plugins: [{
+        id: 'centerText',
+        afterDraw(chart) {
+          const { ctx, chartArea:{ left, top, right, bottom } } = chart;
+          const cx = (left+right)/2, cy = (top+bottom)/2;
+          ctx.save();
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.font = 'bold 22px Apple SD Gothic Neo, sans-serif';
+          ctx.fillStyle = NAVY;
+          ctx.fillText(totalPaidAll, cx, cy - 10);
+          ctx.font = '11px Apple SD Gothic Neo, sans-serif';
+          ctx.fillStyle = '#888';
+          ctx.fillText('총 판매', cx, cy + 12);
+          ctx.restore();
+        }
+      }]
+    });
+
+    // 1-B. 상품별 바 차트
+    new Chart(document.getElementById('chartPaidBar'), {
+      type: 'bar',
+      data: {
+        labels: PRODUCTS,
+        datasets: [{
+          label: '판매 수량',
+          data: PRODUCTS.map(p => totalProd[p]),
+          backgroundColor: PRODUCTS.map(p => PROD_COLORS[p]),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        ...base,
+        plugins: {
+          ...base.plugins,
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const pct = totalPaidAll ? ((ctx.raw/totalPaidAll)*100).toFixed(1) : 0;
+                return ` ${ctx.raw}개 (${pct}%)`;
+              }
+            }
+          }
+        }
+      },
+      plugins: [{
+        id: 'barLabel',
+        afterDatasetsDraw(chart) {
+          const { ctx, scales:{ x, y } } = chart;
+          ctx.save();
+          ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
+          ctx.fillStyle = '#1a2456';
+          ctx.textAlign = 'center';
+          PRODUCTS.forEach((p, i) => {
+            const v = totalProd[p];
+            if (!v) return;
+            const pct = totalPaidAll ? ((v/totalPaidAll)*100).toFixed(1) : 0;
+            ctx.fillText(`${v}개 (${pct}%)`, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
+          });
+          ctx.restore();
+        }
+      }]
+    });
+
+    // 2. 월별 매출
     new Chart(document.getElementById('chartRevenue'), {
       type: 'bar',
       data: {
@@ -251,7 +345,7 @@ async function main() {
         afterDatasetsDraw(chart) {
           const { ctx, scales:{ x, y } } = chart;
           ctx.save();
-          ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
+          ctx.font = 'bold 11px Apple SD Gothic Neo, sans-serif';
           ctx.fillStyle = '#1a2456';
           ctx.textAlign = 'center';
           monthRev.forEach((total, i) => {
@@ -263,7 +357,7 @@ async function main() {
       }]
     });
 
-    // 2. 월별 무료체험 누적바 + 합계 라벨
+    // 3. 월별 무료체험 누적바
     new Chart(document.getElementById('chartMonthlyFree'), {
       type: 'bar',
       data: {
@@ -286,8 +380,7 @@ async function main() {
           const { ctx, scales:{ x, y } } = chart;
           ctx.save();
           ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
-          ctx.fillStyle = '#1a2456';
-          ctx.textAlign = 'center';
+          ctx.fillStyle = '#1a2456'; ctx.textAlign = 'center';
           monthFreeTotal.forEach((total, i) => {
             if (!total) return;
             ctx.fillText(total, x.getPixelForValue(i), y.getPixelForValue(total) - 7);
@@ -297,7 +390,7 @@ async function main() {
       }]
     });
 
-    // 3. 일자별 꺾은선
+    // 4. 일자별 꺾은선
     new Chart(document.getElementById('chartDailyFree'), {
       type: 'line',
       data: {
@@ -310,7 +403,7 @@ async function main() {
       options: { ...base, plugins: { ...base.plugins, tooltip: { mode:'index', intersect:false } } }
     });
 
-    // 4. 일자별 표
+    // 5. 일자별 표
     const tbody = document.getElementById('tableBody');
     let tot2w=0, tot4w=0, totP={}, totRev=0;
     PRODUCTS.forEach(p => totP[p]=0);
