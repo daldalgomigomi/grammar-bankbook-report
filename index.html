@@ -71,7 +71,8 @@
   td.date.sat { color: #1a6fc4; }
   td.date.sun { color: #e3001b; }
   .total-row td { font-weight: 800; background: #fffbe6; color: #1a2456; border-top: 2px solid #f5c200; }
-  .zero { color: #ccc; }
+  td.free-total { background: #e8edf8; font-weight: 700; color: #1a2456; }
+  td.paid-total { background: #fff8d6; font-weight: 700; color: #7a5c00; }
 </style>
 </head>
 <body>
@@ -244,7 +245,22 @@ async function main() {
       },
       options: { ...base, plugins: { ...base.plugins,
         tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}원` } }
-      }}
+      }},
+      plugins: [{
+        id: 'revLabel',
+        afterDatasetsDraw(chart) {
+          const { ctx, scales:{ x, y } } = chart;
+          ctx.save();
+          ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
+          ctx.fillStyle = '#1a2456';
+          ctx.textAlign = 'center';
+          monthRev.forEach((total, i) => {
+            if (!total) return;
+            ctx.fillText(fmt(total)+'원', x.getPixelForValue(i), y.getPixelForValue(total) - 7);
+          });
+          ctx.restore();
+        }
+      }]
     });
 
     // 2. 월별 무료체험 누적바 + 합계 라벨
@@ -288,7 +304,7 @@ async function main() {
         labels: dailyLabels,
         datasets: [
           { label: '2주 무료체험', data: daily2w, borderColor: NAVY, backgroundColor: 'rgba(26,36,86,0.06)', pointBackgroundColor: NAVY, pointRadius: 5, tension: 0.3, fill: false },
-          { label: '4주 무료체험', data: daily4w, borderColor: '#c8930a', backgroundColor: 'rgba(245,194,0,0.06)', pointBackgroundColor: '#c8930a', pointRadius: 5, tension: 0.3, fill: false }
+          { label: '4주 무료체험', data: daily4w, borderColor: '#f5c200', backgroundColor: 'rgba(245,194,0,0.06)', pointBackgroundColor: '#f5c200', pointRadius: 5, tension: 0.3, fill: false }
         ]
       },
       options: { ...base, plugins: { ...base.plugins, tooltip: { mode:'index', intersect:false } } }
@@ -315,9 +331,9 @@ async function main() {
       tr.innerHTML = `
         <td class="${dc}">${ds.slice(5)}</td>
         ${cell(w2)}${cell(w4)}
-        <td><b>${freeTotal||'-'}</b></td>
+        <td class="free-total">${freeTotal||'-'}</td>
         ${PRODUCTS.map(pr=>cell(p[pr]||0)).join('')}
-        <td><b>${paidTotal||'-'}</b></td>
+        <td class="paid-total">${paidTotal||'-'}</td>
         <td>${rev ? fmt(rev)+'원' : '<span class="zero">-</span>'}</td>`;
       tbody.appendChild(tr);
     });
