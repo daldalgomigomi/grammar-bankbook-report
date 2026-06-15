@@ -283,11 +283,11 @@ async function main() {
     new Chart(document.getElementById('chartPaidBar'), {
       type: 'bar',
       data: {
-        labels: PRODUCTS,
+        labels: [...PRODUCTS, '전체'],
         datasets: [{
           label: '판매 수량',
-          data: PRODUCTS.map(p => totalProd[p]),
-          backgroundColor: PRODUCTS.map(p => PROD_COLORS[p]),
+          data: [...PRODUCTS.map(p => totalProd[p]), totalPaidAll],
+          backgroundColor: [...PRODUCTS.map(p => PROD_COLORS[p]), '#4a90d9'],
           borderRadius: 6
         }]
       },
@@ -297,7 +297,7 @@ async function main() {
         scales: {
           x: { ...base.scales.x },
           y: { ...base.scales.y,
-            max: Math.ceil(Math.max(...PRODUCTS.map(p => totalProd[p])) * 1.25)
+            max: Math.ceil(Math.max(...PRODUCTS.map(p => totalProd[p]), totalPaidAll) * 1.25)
           }
         },
         plugins: {
@@ -321,11 +321,12 @@ async function main() {
           ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
           ctx.fillStyle = '#1a2456';
           ctx.textAlign = 'center';
-          PRODUCTS.forEach((p, i) => {
-            const v = totalProd[p];
+          [...PRODUCTS, '전체'].forEach((p, i) => {
+            const v = i < PRODUCTS.length ? totalProd[p] : totalPaidAll;
             if (!v) return;
             const pct = totalPaidAll ? ((v/totalPaidAll)*100).toFixed(1) : 0;
-            ctx.fillText(`${v}개 (${pct}%)`, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
+            const label = i < PRODUCTS.length ? `${v}개 (${pct}%)` : `${v}개`;
+            ctx.fillText(label, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
           });
           // 전체 합계 우상단 표시
           ctx.font = 'bold 13px Apple SD Gothic Neo, sans-serif';
