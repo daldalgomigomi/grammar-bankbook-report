@@ -207,6 +207,9 @@ async function main() {
     Object.values(paidCount).forEach(obj => {
       PRODUCTS.forEach(p => totalProd[p] += (obj[p]||0));
     });
+    // 1번 차트 전용 고정값 추가
+    totalProd['6개월']  += 345;
+    totalProd['12개월'] += 699;
     const totalPaidAll = PRODUCTS.reduce((s,p) => s+totalProd[p], 0);
 
     const monthRev = MONTH_NUMS.map(mo => Object.entries(paidRevenue).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
