@@ -81,7 +81,7 @@
 
     <!-- 3. 월별 무료체험 신청수 -->
     <div class="section">
-      <div class="section-title">3. 월별 무료체험 상품 신청수 (2주 / 4주)</div>
+      <div class="section-title">3. 월별 무료체험 상품 신청수</div>
       <div class="chart-wrap"><canvas id="chartMonthlyFree"></canvas></div>
     </div>
 
@@ -293,6 +293,13 @@ async function main() {
       },
       options: {
         ...base,
+        layout: { padding: { top: 36 } },
+        scales: {
+          x: { ...base.scales.x },
+          y: { ...base.scales.y,
+            max: Math.ceil(Math.max(...PRODUCTS.map(p => totalProd[p])) * 1.25)
+          }
+        },
         plugins: {
           ...base.plugins,
           legend: { display: false },
@@ -320,6 +327,11 @@ async function main() {
             const pct = totalPaidAll ? ((v/totalPaidAll)*100).toFixed(1) : 0;
             ctx.fillText(`${v}개 (${pct}%)`, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
           });
+          // 전체 합계 우상단 표시
+          ctx.font = 'bold 13px Apple SD Gothic Neo, sans-serif';
+          ctx.fillStyle = '#1a2456';
+          ctx.textAlign = 'right';
+          ctx.fillText(`전체 ${totalPaidAll}개`, chart.chartArea.right, chart.chartArea.top - 14);
           ctx.restore();
         }
       }]
