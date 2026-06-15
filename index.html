@@ -284,20 +284,20 @@ async function main() {
       type: 'bar',
       data: {
         labels: [...PRODUCTS, '전체'],
-        datasets: [{
-          label: '판매 수량',
-          data: [...PRODUCTS.map(p => totalProd[p]), totalPaidAll],
-          backgroundColor: [...PRODUCTS.map(p => PROD_COLORS[p]), '#4a90d9'],
-          borderRadius: 6
-        }]
+        datasets: [
+          { label: '1개월', data: [...PRODUCTS.map((p,i) => i===0 ? totalProd[p] : 0), totalProd['1개월']], backgroundColor: PROD_COLORS['1개월'], borderRadius: 0, stack: 'total' },
+          { label: '3개월', data: [...PRODUCTS.map((p,i) => i===1 ? totalProd[p] : 0), totalProd['3개월']], backgroundColor: PROD_COLORS['3개월'], borderRadius: 0, stack: 'total' },
+          { label: '6개월', data: [...PRODUCTS.map((p,i) => i===2 ? totalProd[p] : 0), totalProd['6개월']], backgroundColor: PROD_COLORS['6개월'], borderRadius: 0, stack: 'total' },
+          { label: '12개월', data: [...PRODUCTS.map((p,i) => i===3 ? totalProd[p] : 0), totalProd['12개월']], backgroundColor: PROD_COLORS['12개월'], borderRadius: 0, stack: 'total' },
+        ]
       },
       options: {
         ...base,
         layout: { padding: { top: 36 } },
         scales: {
-          x: { ...base.scales.x },
-          y: { ...base.scales.y,
-            max: Math.ceil(Math.max(...PRODUCTS.map(p => totalProd[p]), totalPaidAll) * 1.25)
+          x: { ...base.scales.x, stacked: true },
+          y: { ...base.scales.y, stacked: true,
+            max: Math.ceil(totalPaidAll * 1.25)
           }
         },
         plugins: {
@@ -321,13 +321,15 @@ async function main() {
           ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
           ctx.fillStyle = '#1a2456';
           ctx.textAlign = 'center';
-          [...PRODUCTS, '전체'].forEach((p, i) => {
-            const v = i < PRODUCTS.length ? totalProd[p] : totalPaidAll;
+          // 개별 바 라벨
+          PRODUCTS.forEach((p, i) => {
+            const v = totalProd[p];
             if (!v) return;
             const pct = totalPaidAll ? ((v/totalPaidAll)*100).toFixed(1) : 0;
-            const label = i < PRODUCTS.length ? `${v}개 (${pct}%)` : `${v}개`;
-            ctx.fillText(label, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
+            ctx.fillText(`${v}개 (${pct}%)`, x.getPixelForValue(i), y.getPixelForValue(v) - 7);
           });
+          // 전체 바 라벨
+          ctx.fillText(`${totalPaidAll}개`, x.getPixelForValue(PRODUCTS.length), y.getPixelForValue(totalPaidAll) - 7);
           // 전체 합계 우상단 표시
           ctx.font = 'bold 13px Apple SD Gothic Neo, sans-serif';
           ctx.fillStyle = '#1a2456';
