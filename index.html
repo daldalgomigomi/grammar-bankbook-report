@@ -330,11 +330,7 @@ async function main() {
           });
           // 전체 바 라벨
           ctx.fillText(`${totalPaidAll}개`, x.getPixelForValue(PRODUCTS.length), y.getPixelForValue(totalPaidAll) - 7);
-          // 전체 합계 우상단 표시
-          ctx.font = 'bold 13px Apple SD Gothic Neo, sans-serif';
-          ctx.fillStyle = '#1a2456';
-          ctx.textAlign = 'right';
-          ctx.fillText(`전체 ${totalPaidAll}개`, chart.chartArea.right, chart.chartArea.top - 14);
+
           ctx.restore();
         }
       }]
