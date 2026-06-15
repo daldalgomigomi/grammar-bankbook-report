@@ -8,37 +8,84 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #f0f2f8; color: #1a1a2e; }
-  header { background: #1a2456; color: #fff; padding: 20px 32px; display: flex; align-items: center; gap: 12px; }
-  header h1 { font-size: 18px; font-weight: 700; }
-  header span { font-size: 13px; opacity: 0.75; margin-left: auto; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-  .section { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 6px rgba(26,36,86,0.08); }
-  .section-title { font-size: 15px; font-weight: 700; color: #1a2456; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid #f0f2f8; }
-  .chart-wrap { position: relative; height: 260px; }
-  .loading { text-align: center; padding: 60px; color: #999; font-size: 14px; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #eaf0f8; color: #1a2456; }
 
+  header {
+    background: linear-gradient(135deg, #1a2456 0%, #2b3f8c 100%);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: stretch;
+    min-height: 64px;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 14px;
+  }
+  .header-badge {
+    background: #f5c200;
+    color: #1a2456;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  header h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+  header .updated { font-size: 12px; opacity: 0.65; margin-left: auto; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+  .section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(26,36,86,0.07);
+    border-top: 3px solid #1a2456;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1a2456;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eaf0f8;
+    letter-spacing: -0.2px;
+  }
+  .chart-wrap { position: relative; height: 260px; }
+  .loading { text-align: center; padding: 80px; color: #8899bb; font-size: 14px; }
+
+  /* 표 */
+  .table-scroll { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { background: #1a2456; color: #fff; }
-  th { padding: 10px 12px; text-align: center; font-weight: 600; white-space: nowrap; }
-  td { padding: 9px 12px; text-align: center; border-bottom: 1px solid #f0f0f0; color: #333; }
-  tbody tr:hover { background: #f7f8fc; }
-  td.date { text-align: left; font-weight: 500; color: #1a2456; }
+  thead tr { background: #1a2456; }
+  th { padding: 10px 12px; text-align: center; font-weight: 700; color: #fff; white-space: nowrap; font-size: 12px; }
+  th:first-child { text-align: left; }
+  td { padding: 9px 12px; text-align: center; border-bottom: 1px solid #f0f3f9; color: #333; }
+  tbody tr:hover { background: #f4f7fd; }
+  td.date { text-align: left; font-weight: 600; color: #1a2456; }
   td.date.sat { color: #1a6fc4; }
   td.date.sun { color: #e3001b; }
-  .total-row td { font-weight: 700; background: #fff8e1; color: #1a2456; }
+  .total-row td { font-weight: 800; background: #fffbe6; color: #1a2456; border-top: 2px solid #f5c200; }
   .zero { color: #ccc; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>문법 문제뱅크 판매 보고서</h1>
-  <span id="updated-at"></span>
+  <div class="header-inner">
+    <span class="header-badge">NE능률</span>
+    <h1>문법 문제뱅크 판매 보고서</h1>
+    <span class="updated" id="updated-at"></span>
+  </div>
 </header>
 
 <div class="container">
-  <div id="loading" class="loading">⏳ 데이터 불러오는 중...</div>
+  <div id="loading" class="loading">데이터 불러오는 중...</div>
   <div id="main" style="display:none">
 
     <div class="section">
@@ -58,7 +105,7 @@
 
     <div class="section">
       <div class="section-title">4. 일별 상세 데이터</div>
-      <div style="overflow-x:auto">
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -92,8 +139,11 @@ const URLS = {
 const MONTHS = ['6월','7월','8월','9월','10월','11월','12월'];
 const MONTH_NUMS = [6,7,8,9,10,11,12];
 const PRODUCTS = ['1개월','3개월','6개월','12개월'];
-const NAVY = '#1a2456';
-const YELLOW = '#f5c518';
+const NAVY       = '#1a2456';
+const NAVY_LIGHT = '#c8d4ee';
+const YELLOW     = '#f5c200';
+const YELLOW_LIGHT = '#ffe88a';
+const BLUE_MID   = '#2b3f8c';
 
 function parseDate(str) {
   if (!str) return null;
@@ -107,56 +157,34 @@ function parseDate(str) {
   if (m) return new Date(+m[3], +m[1]-1, +m[2]);
   return null;
 }
-
 function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function fmt(n) { return (n||0).toLocaleString('ko-KR'); }
 function cell(v) { return v ? `<td>${fmt(v)}</td>` : `<td class="zero">-</td>`; }
-
 function fetchCSV(url) {
-  return new Promise((resolve, reject) => {
+  return new Promise((res, rej) => {
     Papa.parse(url, {
       download: true, header: true, skipEmptyLines: true,
-      complete: r => resolve(r.data),
-      error: e => reject(e)
+      complete: r => res(r.data), error: e => rej(e)
     });
   });
 }
 
-// 날짜 문자열로 요일 반환 (0=일,6=토)
-function getDayOfWeek(dateStr) {
-  const d = new Date(dateStr);
-  return d.getDay();
-}
-
 async function main() {
   try {
-    const [raw2, raw4, rawPaid] = await Promise.all([
-      fetchCSV(URLS.w2), fetchCSV(URLS.w4), fetchCSV(URLS.paid)
-    ]);
+    const [raw2, raw4, rawPaid] = await Promise.all([fetchCSV(URLS.w2), fetchCSV(URLS.w4), fetchCSV(URLS.paid)]);
 
-    const dateKey = rows => Object.keys(rows[0])[0];
+    const count2w = {}, count4w = {}, paidCount = {}, paidRevenue = {};
 
-    const count2w = {}, count4w = {};
     if (raw2.length) {
-      const k = dateKey(raw2);
-      raw2.forEach(r => {
-        const d = parseDate(r[k]); if (!d) return;
-        const key = fmtDate(d);
-        count2w[key] = (count2w[key]||0) + 1;
-      });
+      const k = Object.keys(raw2[0])[0];
+      raw2.forEach(r => { const d = parseDate(r[k]); if (!d) return; const key = fmtDate(d); count2w[key] = (count2w[key]||0)+1; });
     }
     if (raw4.length) {
-      const k = dateKey(raw4);
-      raw4.forEach(r => {
-        const d = parseDate(r[k]); if (!d) return;
-        const key = fmtDate(d);
-        count4w[key] = (count4w[key]||0) + 1;
-      });
+      const k = Object.keys(raw4[0])[0];
+      raw4.forEach(r => { const d = parseDate(r[k]); if (!d) return; const key = fmtDate(d); count4w[key] = (count4w[key]||0)+1; });
     }
-
-    const paidCount = {}, paidRevenue = {};
     if (rawPaid.length) {
       const keys = Object.keys(rawPaid[0]);
       const dKey = keys[0];
@@ -164,31 +192,27 @@ async function main() {
       const aKey = keys.find(k => k.replace(/\s/g,'').includes('결제금액') || k.replace(/\s/g,'').includes('금액'));
       rawPaid.forEach(r => {
         const d = parseDate(r[dKey]); if (!d) return;
-        const dateStr = fmtDate(d);
+        const ds = fmtDate(d);
         const prod = pKey ? (r[pKey]||'').trim() : '';
         const amt  = aKey ? parseInt((r[aKey]||'0').toString().replace(/[^0-9]/g,''))||0 : 0;
-        if (!paidCount[dateStr]) { paidCount[dateStr] = {}; PRODUCTS.forEach(p => paidCount[dateStr][p]=0); }
-        if (!paidRevenue[dateStr]) paidRevenue[dateStr] = 0;
-        if (PRODUCTS.includes(prod)) paidCount[dateStr][prod]++;
-        paidRevenue[dateStr] += amt;
+        if (!paidCount[ds])   { paidCount[ds] = {}; PRODUCTS.forEach(p => paidCount[ds][p]=0); }
+        if (!paidRevenue[ds]) paidRevenue[ds] = 0;
+        if (PRODUCTS.includes(prod)) paidCount[ds][prod]++;
+        paidRevenue[ds] += amt;
       });
     }
 
-    const allKeys = [...Object.keys(count2w), ...Object.keys(count4w), ...Object.keys(paidCount)];
+    const allKeys = [...Object.keys(count2w),...Object.keys(count4w),...Object.keys(paidCount)];
     const year = allKeys.length ? allKeys[0].split('-')[0] : '2026';
-
-    function isMonth(dateStr, mo) {
-      return dateStr.startsWith(`${year}-${String(mo).padStart(2,'0')}`);
-    }
+    const isMonth = (ds, mo) => ds.startsWith(`${year}-${String(mo).padStart(2,'0')}`);
 
     const monthRev = MONTH_NUMS.map(mo => Object.entries(paidRevenue).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
     const month2w  = MONTH_NUMS.map(mo => Object.entries(count2w).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
     const month4w  = MONTH_NUMS.map(mo => Object.entries(count4w).filter(([d])=>isMonth(d,mo)).reduce((s,[,v])=>s+v,0));
+    const monthFreeTotal = month2w.map((v,i) => v + month4w[i]);
 
-    const juneDates = [...new Set([
-      ...Object.keys(count2w), ...Object.keys(count4w), ...Object.keys(paidCount)
-    ])].filter(d => isMonth(d,6)).sort();
-
+    const juneDates = [...new Set([...Object.keys(count2w),...Object.keys(count4w),...Object.keys(paidCount)])]
+      .filter(d => isMonth(d,6)).sort();
     const dailyLabels = juneDates.map(d => d.slice(5));
     const daily2w = juneDates.map(d => count2w[d]||0);
     const daily4w = juneDates.map(d => count4w[d]||0);
@@ -198,15 +222,11 @@ async function main() {
     const base = {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'top',
-          align: 'end',
-          labels: { font:{size:12}, boxWidth:14 }
-        }
+        legend: { position:'top', align:'end', labels:{ font:{size:12}, boxWidth:12, padding:16 } }
       },
       scales: {
-        x: { grid:{display:false}, ticks:{font:{size:11}} },
-        y: { beginAtZero:true, ticks:{font:{size:11}} }
+        x: { grid:{display:false}, ticks:{font:{size:11}, color:'#666'} },
+        y: { beginAtZero:true, grid:{color:'#f0f3f9'}, ticks:{font:{size:11}, color:'#666'} }
       }
     };
 
@@ -218,23 +238,17 @@ async function main() {
         datasets: [{
           label: '매출(원)',
           data: monthRev,
-          backgroundColor: monthRev.map((v,i)=> i===0 ? NAVY : '#c5cce8'),
+          backgroundColor: monthRev.map((v,i) => i===0 ? NAVY : NAVY_LIGHT),
           borderRadius: 6
         }]
       },
-      options: {
-        ...base,
-        plugins: {
-          ...base.plugins,
-          tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}원` } }
-        }
-      }
+      options: { ...base, plugins: { ...base.plugins,
+        tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}원` } }
+      }}
     });
 
-    // 2. 월별 무료체험 (누적바) + 6월 합계 datalabels
-    // Chart.js 기본 datalabels 없이 afterDraw로 직접 그리기
-    const monthFreeTotal = month2w.map((v,i) => v + month4w[i]);
-    const freeChart = new Chart(document.getElementById('chartMonthlyFree'), {
+    // 2. 월별 무료체험 누적바 + 합계 라벨
+    new Chart(document.getElementById('chartMonthlyFree'), {
       type: 'bar',
       data: {
         labels: MONTHS,
@@ -243,30 +257,24 @@ async function main() {
           { label: '4주 무료체험', data: month4w, backgroundColor: YELLOW, borderRadius: 4, stack: 'free' }
         ]
       },
-      options: {
-        ...base,
+      options: { ...base,
         scales: {
           x: { ...base.scales.x, stacked: true },
           y: { ...base.scales.y, stacked: true }
         },
-        plugins: {
-          ...base.plugins,
-          tooltip: { mode: 'index', intersect: false }
-        }
+        plugins: { ...base.plugins, tooltip: { mode:'index', intersect:false } }
       },
       plugins: [{
         id: 'totalLabel',
         afterDatasetsDraw(chart) {
-          const { ctx, scales: { x, y } } = chart;
+          const { ctx, scales:{ x, y } } = chart;
           ctx.save();
           ctx.font = 'bold 12px Apple SD Gothic Neo, sans-serif';
-          ctx.fillStyle = '#333';
+          ctx.fillStyle = '#1a2456';
           ctx.textAlign = 'center';
           monthFreeTotal.forEach((total, i) => {
             if (!total) return;
-            const xPos = x.getPixelForValue(i);
-            const yPos = y.getPixelForValue(total) - 6;
-            ctx.fillText(total, xPos, yPos);
+            ctx.fillText(total, x.getPixelForValue(i), y.getPixelForValue(total) - 7);
           });
           ctx.restore();
         }
@@ -279,31 +287,11 @@ async function main() {
       data: {
         labels: dailyLabels,
         datasets: [
-          {
-            label: '2주 무료체험',
-            data: daily2w,
-            borderColor: NAVY,
-            backgroundColor: 'rgba(26,36,86,0.08)',
-            pointBackgroundColor: NAVY,
-            pointRadius: 5, tension: 0.3, fill: false
-          },
-          {
-            label: '4주 무료체험',
-            data: daily4w,
-            borderColor: '#e6a800',
-            backgroundColor: 'rgba(245,197,24,0.08)',
-            pointBackgroundColor: '#e6a800',
-            pointRadius: 5, tension: 0.3, fill: false
-          }
+          { label: '2주 무료체험', data: daily2w, borderColor: NAVY, backgroundColor: 'rgba(26,36,86,0.06)', pointBackgroundColor: NAVY, pointRadius: 5, tension: 0.3, fill: false },
+          { label: '4주 무료체험', data: daily4w, borderColor: '#c8930a', backgroundColor: 'rgba(245,194,0,0.06)', pointBackgroundColor: '#c8930a', pointRadius: 5, tension: 0.3, fill: false }
         ]
       },
-      options: {
-        ...base,
-        plugins: {
-          ...base.plugins,
-          tooltip: { mode: 'index', intersect: false }
-        }
-      }
+      options: { ...base, plugins: { ...base.plugins, tooltip: { mode:'index', intersect:false } } }
     });
 
     // 4. 일자별 표
@@ -311,51 +299,47 @@ async function main() {
     let tot2w=0, tot4w=0, totP={}, totRev=0;
     PRODUCTS.forEach(p => totP[p]=0);
 
-    juneDates.forEach(dateStr => {
-      const p   = paidCount[dateStr]   || {};
-      const rev = paidRevenue[dateStr] || 0;
-      const w2  = count2w[dateStr]     || 0;
-      const w4  = count4w[dateStr]     || 0;
+    juneDates.forEach(ds => {
+      const p   = paidCount[ds]   || {};
+      const rev = paidRevenue[ds] || 0;
+      const w2  = count2w[ds]     || 0;
+      const w4  = count4w[ds]     || 0;
       const freeTotal = w2 + w4;
       const paidTotal = PRODUCTS.reduce((s,pr)=>s+(p[pr]||0),0);
       tot2w += w2; tot4w += w4; totRev += rev;
       PRODUCTS.forEach(pr => totP[pr]+=(p[pr]||0));
 
-      const dow = getDayOfWeek(dateStr);
-      const dayClass = dow === 6 ? 'date sat' : dow === 0 ? 'date sun' : 'date';
-      const label = dateStr.slice(5);
-
+      const dow = new Date(ds).getDay();
+      const dc  = dow===6 ? 'date sat' : dow===0 ? 'date sun' : 'date';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="${dayClass}">${label}</td>
+        <td class="${dc}">${ds.slice(5)}</td>
         ${cell(w2)}${cell(w4)}
         <td><b>${freeTotal||'-'}</b></td>
         ${PRODUCTS.map(pr=>cell(p[pr]||0)).join('')}
         <td><b>${paidTotal||'-'}</b></td>
-        <td>${rev ? fmt(rev)+'원' : '<span class="zero">-</span>'}</td>
-      `;
+        <td>${rev ? fmt(rev)+'원' : '<span class="zero">-</span>'}</td>`;
       tbody.appendChild(tr);
     });
 
     const totPaidAll = PRODUCTS.reduce((s,p)=>s+totP[p],0);
-    const totRow = document.createElement('tr');
-    totRow.className = 'total-row';
-    totRow.innerHTML = `
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
       <td class="date">합계</td>
-      <td>${tot2w}</td><td>${tot4w}</td>
-      <td><b>${tot2w+tot4w}</b></td>
+      <td>${tot2w}</td><td>${tot4w}</td><td><b>${tot2w+tot4w}</b></td>
       ${PRODUCTS.map(p=>`<td>${totP[p]}</td>`).join('')}
       <td><b>${totPaidAll}</b></td>
-      <td>${fmt(totRev)}원</td>
-    `;
-    tbody.appendChild(totRow);
+      <td>${fmt(totRev)}원</td>`;
+    tbody.appendChild(tr);
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('main').style.display = 'block';
 
   } catch(e) {
     document.getElementById('loading').innerHTML =
-      `<p style="color:#c00">데이터 로드 실패: ${e.message}</p><p style="font-size:12px;color:#999;margin-top:8px">구글 시트 게시 설정을 확인해주세요.</p>`;
+      `<p style="color:#c00;font-size:14px">데이터 로드 실패: ${e.message}</p>
+       <p style="font-size:12px;color:#999;margin-top:8px">구글 시트 게시 설정을 확인해주세요.</p>`;
     console.error(e);
   }
 }
